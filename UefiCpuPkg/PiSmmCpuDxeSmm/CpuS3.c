@@ -826,18 +826,20 @@ CopyRegisterTable (
 
   CopyMem (DestinationRegisterTableList, SourceRegisterTableList, NumberOfCpus * sizeof (CPU_REGISTER_TABLE));
   for (Index = 0; Index < NumberOfCpus; Index++) {
-    RegisterTableEntry = AllocatePool (DestinationRegisterTableList[Index].AllocatedSize);
-    ASSERT (RegisterTableEntry != NULL);
-    CopyMem (RegisterTableEntry, (VOID *)(UINTN)SourceRegisterTableList[Index].RegisterTableEntry, DestinationRegisterTableList[Index].AllocatedSize);
-    //
-    // Go though all MSRs in register table to initialize MSR spin lock
-    //
-    for (Index1 = 0; Index1 < DestinationRegisterTableList[Index].TableLength; Index1++, RegisterTableEntry++) {
-      if ((RegisterTableEntry->RegisterType == Msr) && (RegisterTableEntry->ValidBitLength < 64)) {
-        //
-        // Initialize MSR spin lock only for those MSRs need bit field writing
-        //
-        InitMsrSpinLockByIndex (RegisterTableEntry->Index);
+    if (DestinationRegisterTableList[Index].AllocatedSize != 0) {
+      RegisterTableEntry = AllocatePool (DestinationRegisterTableList[Index].AllocatedSize);
+      ASSERT (RegisterTableEntry != NULL);
+      CopyMem (RegisterTableEntry, (VOID *)(UINTN)SourceRegisterTableList[Index].RegisterTableEntry, DestinationRegisterTableList[Index].AllocatedSize);
+      //
+      // Go though all MSRs in register table to initialize MSR spin lock
+      //
+      for (Index1 = 0; Index1 < DestinationRegisterTableList[Index].TableLength; Index1++, RegisterTableEntry++) {
+        if ((RegisterTableEntry->RegisterType == Msr) && (RegisterTableEntry->ValidBitLength < 64)) {
+          //
+          // Initialize MSR spin lock only for those MSRs need bit field writing
+          //
+          InitMsrSpinLockByIndex (RegisterTableEntry->Index);
+        }
       }
     }
     DestinationRegisterTableList[Index].RegisterTableEntry = (EFI_PHYSICAL_ADDRESS)(UINTN)RegisterTableEntry;
